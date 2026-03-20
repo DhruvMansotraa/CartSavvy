@@ -307,3 +307,158 @@ export const userPreferences = mysqlTable(
 
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = typeof userPreferences.$inferInsert;
+
+/**
+ * Cities and locations supported by the platform.
+ * Stores information about delivery zones and service areas.
+ */
+export const cities = mysqlTable(
+  "cities",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** City name (e.g., "Bangalore", "Mumbai", "Delhi") */
+    name: varchar("name", { length: 100 }).notNull().unique(),
+    /** City code for API integration */
+    code: varchar("code", { length: 10 }).notNull().unique(),
+    /** State/Region */
+    state: varchar("state", { length: 100 }).notNull(),
+    /** Latitude for location-based services */
+    latitude: decimal("latitude", { precision: 10, scale: 8 }),
+    /** Longitude for location-based services */
+    longitude: decimal("longitude", { precision: 11, scale: 8 }),
+    /** Whether city is currently active */
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    stateIdx: index("state_idx").on(table.state),
+    nameIdx: index("city_name_idx").on(table.name),
+  })
+);
+
+export type City = typeof cities.$inferSelect;
+export type InsertCity = typeof cities.$inferInsert;
+
+/**
+ * Delivery zones within cities.
+ * Stores pincode-based delivery areas for each platform.
+ */
+export const deliveryZones = mysqlTable(
+  "delivery_zones",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** Reference to city */
+    cityId: int("cityId").notNull(),
+    /** Pincode/Postal code */
+    pincode: varchar("pincode", { length: 10 }).notNull(),
+    /** Area name within city */
+    areaName: varchar("areaName", { length: 255 }).notNull(),
+    /** Delivery time in minutes */
+    deliveryTimeMinutes: int("deliveryTimeMinutes").notNull(),
+    /** Whether this zone is currently serviceable */
+    isServiceable: boolean("isServiceable").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    cityIdIdx: index("city_id_idx").on(table.cityId),
+    pincodeIdx: index("pincode_idx").on(table.pincode),
+  })
+);
+
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type InsertDeliveryZone = typeof deliveryZones.$inferInsert;
+
+/**
+ * Platform coverage by delivery zone.
+ * Tracks which platforms operate in which areas.
+ */
+export const platformCoverage = mysqlTable(
+  "platform_coverage",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** Reference to platform */
+    platformId: int("platformId").notNull(),
+    /** Reference to delivery zone */
+    deliveryZoneId: int("deliveryZoneId").notNull(),
+    /** Delivery fee for this zone in paise */
+    deliveryFee: int("deliveryFee").notNull(),
+    /** Minimum order value for free delivery in paise */
+    freeDeliveryThreshold: int("freeDeliveryThreshold"),
+    /** Whether platform is currently available in this zone */
+    isAvailable: boolean("isAvailable").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    platformZoneIdx: index("platform_zone_idx").on(table.platformId, table.deliveryZoneId),
+  })
+);
+
+export type PlatformCoverage = typeof platformCoverage.$inferSelect;
+export type InsertPlatformCoverage = typeof platformCoverage.$inferInsert;
+
+/**
+ * Location-based product pricing variations.
+ * Stores pricing adjustments for different locations.
+ */
+export const locationPricing = mysqlTable(
+  "location_pricing",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** Reference to product pricing */
+    productPricingId: int("productPricingId").notNull(),
+    /** Reference to delivery zone */
+    deliveryZoneId: int("deliveryZoneId").notNull(),
+    /** Price multiplier for this location (1.0 = no change) */
+    priceMultiplier: decimal("priceMultiplier", { precision: 4, scale: 2 }).default("1.00").notNull(),
+    /** Adjusted price in paise */
+    adjustedPrice: int("adjustedPrice").notNull(),
+    /** Stock availability in this location */
+    stockStatus: mysqlEnum("stockStatus", ["in_stock", "low_stock", "out_of_stock"])
+      .default("in_stock")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    productZoneIdx: index("product_zone_idx").on(table.productPricingId, table.deliveryZoneId),
+  })
+);
+
+export type LocationPricing = typeof locationPricing.$inferSelect;
+export type InsertLocationPricing = typeof locationPricing.$inferInsert;
+
+/**
+ * User location preferences.
+ * Stores user's selected location and delivery zone.
+ */
+export const userLocations = mysqlTable(
+  "user_locations",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** Reference to user */
+    userId: int("userId").notNull().unique(),
+    /** Reference to city */
+    cityId: int("cityId").notNull(),
+    /** Reference to delivery zone */
+    deliveryZoneId: int("deliveryZoneId").notNull(),
+    /** Pincode */
+    pincode: varchar("pincode", { length: 10 }).notNull(),
+    /** Full address */
+    address: text("address"),
+    /** Whether this is the primary location */
+    isPrimary: boolean("isPrimary").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("user_id_idx").on(table.userId),
+    cityIdIdx: index("city_id_idx").on(table.cityId),
+    pincodeIdx: index("pincode_idx").on(table.pincode),
+  })
+);
+
+export type UserLocation = typeof userLocations.$inferSelect;
+export type InsertUserLocation = typeof userLocations.$inferInsert;
