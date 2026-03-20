@@ -159,7 +159,7 @@ CartSavvy aims to become a **real-time price intelligence engine** for quick com
 ## 👤 Author
 
 **Dhruv Sharma**
-Aspiring Frontend Developer | Building real-world products
+Aspiring Developer | Building real-world products
 
 ---
 
