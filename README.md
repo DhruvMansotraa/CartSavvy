@@ -2,7 +2,7 @@
 
 **CartSavvy** is a smart price comparison mobile app that helps users find the cheapest way to buy groceries across multiple quick-commerce platforms like Blinkit, Zepto, and Swiggy Instamart.
 
-> 💡 Built to solve a real problem: *“Where can I get my entire cart for the lowest price?”*
+> 💡 Built to solve a real problem: *“Where can I get my entire cart for the lowest price?”
 
 ---
 
